@@ -22,13 +22,15 @@ for _, filename in ipairs(args) do
 	while true do
 		if check_flags then
 			-- TODO
-			break
+			if false then
+				break
+			end
 		end
 		local f = io.open(filename)
 		if f then
 			local buf = f:read("*a")
 			f:close()
-			lex(buf, args[1])
+			lex(buf, filename)
 		else
 			print(string.format("unable to open file %s", filename))
 			return 1
