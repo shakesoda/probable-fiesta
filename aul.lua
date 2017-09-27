@@ -2,13 +2,8 @@
 package.path = package.path .. ";./src/?.lua;./src/?/init.lua"
 
 local lexer = require "lexer"
-local utils = require "utils"
-local trim = utils.trim
-local split = utils.split
-local print_r = utils.print_r
 
 local args = {...}
-local f = io.open(args[1])
 
 if #args < 1 then
 	print "hi"
@@ -19,12 +14,24 @@ local function lex(buf)
 	local tokens = lexer.lex(buf)
 end
 
-if f then
-	local buf = f:read("*a")
-	f:close()
-	lex(buf, args[1])
-	return 0
-else
-	print "unable to open file"
-	return 1
+local check_flags = true
+for _, filename in ipairs(args) do
+	if check_flags and filename == "--" then
+		check_flags = false
+	end
+	while true do
+		if check_flags then
+			-- TODO
+			break
+		end
+		local f = io.open(filename)
+		if f then
+			local buf = f:read("*a")
+			f:close()
+			lex(buf, args[1])
+		else
+			print(string.format("unable to open file %s", filename))
+			return 1
+		end
+	break end
 end
