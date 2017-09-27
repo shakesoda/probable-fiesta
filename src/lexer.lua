@@ -61,6 +61,22 @@ local function advance(expect)
 	return true
 end
 
+local function longest_match(t, search)
+	-- return t[search] and search or false
+	if not search then
+		return false
+	end
+	local found = false
+	for i=1,#search do
+		local v = search:sub(1, i)
+		if not t[v] then
+			break
+		end
+		found = v
+	end
+	return found
+end
+
 local function check_operator()
 	local operators = {
 		-- comparisons
@@ -95,8 +111,6 @@ local function check_operator()
 		["("]  = T_SEPARATOR,
 		[")"]  = T_SEPARATOR,
 
-		["()"] = T_SEPARATOR,
-
 		["{"]  = T_SEPARATOR,
 		["}"]  = T_SEPARATOR,
 		["["]  = T_SEPARATOR,
@@ -106,11 +120,11 @@ local function check_operator()
 		[":"] = T_SEPARATOR,
 	}
 	local operators_rev = utils.invert(operators)
-	local ident = buf:sub(posinfo.col):match("^([%*=%-%+%(%)%[%]]+)")
-	local op = operators[ident]
+	local ident = buf:sub(posinfo.col):match("^([%*=%-%+%(%)%[%]%:]+)")
+	local op = longest_match(operators, ident)
 	if op then
-		emit(op, ident)
-		posinfo.col = posinfo.col + #ident
+		emit(operators[op], op)
+		posinfo.col = posinfo.col + #op
 		return true
 	end
 end
