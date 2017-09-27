@@ -63,21 +63,26 @@ local function clean(source)
 		skip = 2
 	end
 
+	local remap = {}
+	local i = 1
 	while _end do
 		local line = source:sub(_start, _end-1)
 		line = strip_comments(line)
 		if not is_empty(line) then
 			table.insert(lines, line)
+			table.insert(remap, i)
 		end
+		i = i + 1
 		_start = _end + skip
 		_end = source:find("\n", _start)
 	end
 
 	if #lines == 0 then
-		return strip_comments(source)
+		local body = strip_comments(source)
+		return body, { body }, remap
 	end
 
-	return table.concat(lines, "\n"), lines
+	return table.concat(lines, "\n"), lines, remap
 end
 
 function split(str, pat)
@@ -126,10 +131,47 @@ local function invert(t)
 	return ret
 end
 
+
+local bold = ""
+local normal = ""
+local red = ""
+local green = ""
+local yellow = ""
+
+-- this check might not work on windows
+local has_tput = io.popen("tput sgr0 2> /dev/null"):read(0) ~= nil
+if has_tput then
+	local function readout(s)
+		return io.popen("tput " .. s):read("*a")
+	end
+	normal = readout("sgr0")
+	bold = readout("bold")
+	red = readout("setaf 1")
+	green = readout("setaf 2")
+	yellow = readout("setaf 3")
+end
+
+local function error_msg(msg, line, posinfo, warning, len)
+	len = len and len-1 or 0
+
+	local tline = trim(line)
+	local diff = #line - #tline
+	if warning then
+		print(bold .. yellow .. "warning: " .. normal .. msg .. string.format(" on line %d, col %d:", posinfo.row, posinfo.col))
+	else
+		print(bold .. red .. "error: " .. normal .. msg .. string.format(" on line %d, col %d:", posinfo.row, posinfo.col))
+	end
+	local sel = posinfo.col - posinfo.indent
+
+	print(tline:sub(1,sel-1) .. bold .. tline:sub(sel, sel+len) .. normal .. tline:sub(sel+len+1) )
+	print(bold .. string.rep("~", posinfo.col-1-diff) .."^" .. normal)
+end
+
 return {
 	clean = clean,
 	split = split,
 	trim = trim,
 	invert = invert,
-	print_r = print_r
+	print_r = print_r,
+	error_msg = error_msg
 }

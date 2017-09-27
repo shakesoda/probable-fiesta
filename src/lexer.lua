@@ -1,5 +1,6 @@
 require "token"
 local utils = require "utils"
+local error_msg = utils.error_msg
 
 local buf
 local lines
@@ -23,6 +24,7 @@ local function emit(token, value)
 		local itype = (posinfo.indent > top.posinfo.indent) and T_INDENT or T_DEDENT
 		table.insert(tokens, {
 			type = itype,
+			raw = buf,
 			value = math.abs(posinfo.indent - top.posinfo.indent),
 			posinfo = {
 				row = posinfo.row,
@@ -34,6 +36,7 @@ local function emit(token, value)
 	table.insert(tokens, {
 		type = token,
 		value = value,
+		raw = buf,
 		posinfo = {
 			row = posinfo.row,
 			col = posinfo.col,
@@ -132,7 +135,10 @@ local function check_keyword(ident)
 	local keywords = {
 		["function"] = true,
 		["if"] = true,
-		["let"] = true
+		["let"] = true,
+		["for"] = true,
+		["global"] = true,
+		["local"] = true
 	}
 	return keywords[ident] ~= nil
 end
@@ -176,40 +182,9 @@ local function skip_whitespace()
 	end
 end
 
-local bold = ""
-local normal = ""
-local red = ""
-local green = ""
-local yellow = ""
-
--- this check might not work on windows
-local has_tput = io.popen("tput sgr0 2> /dev/null"):read(0) ~= nil
-if has_tput then
-	local function readout(s)
-		return io.popen("tput " .. s):read("*a")
-	end
-	normal = readout("sgr0")
-	bold = readout("bold")
-	red = readout("setaf 1")
-	green = readout("setaf 2")
-	yellow = readout("setaf 3")
-end
-
-local function error_msg(msg, line, posinfo, warning)
-	local tline = utils.trim(line)
-	local diff = #line - #tline
-	if warning then
-		print(bold .. yellow .. "warning: " .. normal .. msg .. string.format(" on line %d, col %d:", posinfo.row, posinfo.col))
-	else
-		print(bold .. red .. "error: " .. normal .. msg .. string.format(" on line %d, col %d:", posinfo.row, posinfo.col))
-	end
-	local sel = posinfo.col - posinfo.indent
-	print(tline:sub(1,sel-1) .. bold .. tline:sub(sel, sel) .. normal .. tline:sub(sel+1) )
-	print(bold .. string.rep("~", posinfo.col-1-diff) .."^" .. normal)
-end
-
 local function lex(source, filename)
-	source, lines = utils.clean(source)
+	local remap = {}
+	source, lines, remap = utils.clean(source)
 	tokens = {}
 	if false then
 		print("INPUT:\n```")
@@ -225,7 +200,7 @@ local function lex(source, filename)
 		buf = line
 		len = #line
 
-		posinfo.row = i
+		posinfo.row = remap[i]
 		posinfo.indent = #line:match("^([\t]*)")
 		posinfo.col = posinfo.indent+1
 
@@ -248,10 +223,6 @@ local function lex(source, filename)
 
 	if errors then
 		return {}
-	end
-
-	for k, v in ipairs(tokens) do
-		print(string.rep(" ", v.posinfo.indent*2) .. token_name(v.type), v.value)
 	end
 
 	return tokens
