@@ -62,7 +62,6 @@ local function advance(expect)
 end
 
 local function longest_match(t, search)
-	-- return t[search] and search or false
 	if not search then
 		return false
 	end
@@ -153,8 +152,8 @@ local function check_identifier()
 end
 
 local function check_literal()
-	local float = "^([%-%+]?[%d]*%.?[%d]+f?)"
 	local check = buf:sub(posinfo.col)
+	local float = "^([%-%+]?[%d]*%.?[%d]+f?)"
 	local lit = check:match(float)
 	if lit and #lit > 0 then
 		emit(T_LITERAL, lit)
@@ -171,11 +170,9 @@ local function check_literal()
 	end
 end
 
-local function check_whitespace()
-	local ws = buf:sub(posinfo.col):match("^([%s]+)")
-	if ws then
-		posinfo.col = posinfo.col + #ws
-		return true
+local function skip_whitespace()
+	while buf:sub(posinfo.col, posinfo.col) == " " do
+		posinfo.col = posinfo.col + 1
 	end
 end
 
@@ -229,15 +226,15 @@ local function lex(source, filename)
 		len = #line
 
 		posinfo.row = i
-		posinfo.col = 1
 		posinfo.indent = #line:match("^([\t]*)")
+		posinfo.col = posinfo.indent+1
 
 		while posinfo.col < len do
+			skip_whitespace()
 			if not (false
 				or check_identifier()
 				or check_literal()
 				or check_operator()
-				or check_whitespace()
 			) then
 				if errors then
 					print()
