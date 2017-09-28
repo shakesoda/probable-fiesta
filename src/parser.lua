@@ -3,6 +3,7 @@ local utils = require "utils"
 local error_msg = utils.error_msg
 
 local expect = { T_KEYWORD }
+local statements, statement_index
 
 local expectations = {
 	INVALID_TOKEN = function(prev, token)
@@ -13,11 +14,19 @@ local expectations = {
 	end
 }
 
+local function next_statement(reason)
+	assert(reason)
+	statement_index = statement_index + 1
+	table.insert(statements, { value = "", indent = 0, cause = reason })
+end
+
 expectations[T_INDENT] = function(prev, token)
+	next_statement(token.type)
 	expect = { T_IDENTIFIER, T_KEYWORD }
 end
 
 expectations[T_DEDENT] = function(prev, token)
+	next_statement(token.type)
 	expect = { T_IDENTIFIER, T_KEYWORD }
 end
 
@@ -36,7 +45,7 @@ expectations[T_IDENTIFIER] = function(prev, token)
 		expect = { T_INDENT }
 		return
 	end
-	expect = { T_OPERATOR, T_SEPARATOR }
+	expect = { T_OPERATOR, T_SEPARATOR, T_KEYWORD }
 	if prev.type == T_LITERAL
 		or prev.type == T_IDENTIFIER
 		or prev.type == T_DEDENT
@@ -46,6 +55,7 @@ expectations[T_IDENTIFIER] = function(prev, token)
 end
 
 expectations[T_KEYWORD] = function(prev, token)
+	next_statement(token.type)
 	expect = { T_IDENTIFIER }
 end
 
@@ -58,13 +68,14 @@ expectations[T_LITERAL] = function(prev, token)
 end
 
 local function parse(tokens)
+	statement_index = 0
+	statements = {}
 	local prev = { value = "<beginning of file>", type = T_INVALID }
+	local block = 0
 	for _, v in ipairs(tokens) do
 		local met = false
 		for _, ttype in ipairs(expect) do
-			-- print("expect", token_name(ttype))
 			if ttype == v.type then
-				-- print("hit")
 				met = ttype
 				break
 			end
@@ -84,13 +95,19 @@ local function parse(tokens)
 				break
 			end
 		end
-		print(token_name(v.type), met)
-		-- if v.type == T_SEPARATOR and v.value == "(" then
-		-- 	if prev and prev.type == T_IDENTIFIER then
-		-- 		print("function call", prev.value .. "()")
-		-- 	end
-		-- end
+		if v.type ~= T_INDENT and v.type ~= T_DEDENT then
+			statements[statement_index] = statements[statement_index] or { value = "" }
+			statements[statement_index].value = statements[statement_index].value .. " " .. v.value
+			statements[statement_index].indent = block
+		else
+			block = tonumber(v.posinfo.indent)
+		end
+		-- print(token_name(v.type), met)
 		prev = v
+	end
+
+	for k, v in ipairs(statements) do
+		print(k, --[[token_name(v.cause),]] string.rep(" ", v.indent*4) .. v.value)
 	end
 end
 

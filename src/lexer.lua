@@ -136,7 +136,6 @@ local function check_keyword(ident)
 	local keywords = {
 		["function"] = true,
 		["if"] = true,
-		["let"] = true,
 		["for"] = true,
 		["global"] = true,
 		["local"] = true
