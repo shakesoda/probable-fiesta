@@ -8,6 +8,7 @@ end
 
 local tokens = {
 	-- lexer tokens
+	T_INVALID = id(),
 	T_IDENTIFIER = id(),
 	T_KEYWORD = id(),
 	T_LITERAL = id(),

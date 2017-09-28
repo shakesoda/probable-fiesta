@@ -122,7 +122,8 @@ local function check_operator()
 		[":"] = T_SEPARATOR,
 	}
 	local operators_rev = utils.invert(operators)
-	local ident = buf:sub(posinfo.col):match("^([%*=%-%+%(%)%[%]%:]+)")
+	local ident = buf:sub(posinfo.col)
+	ident = ident:match("^([%*=%-%+%(%)%[%]%:]+)")
 	local op = longest_match(operators, ident)
 	if op then
 		emit(operators[op], op)
@@ -204,7 +205,7 @@ local function lex(source, filename)
 		posinfo.indent = #line:match("^([\t]*)")
 		posinfo.col = posinfo.indent+1
 
-		while posinfo.col < len do
+		while posinfo.col <= len do
 			skip_whitespace()
 			if not (false
 				or check_identifier()

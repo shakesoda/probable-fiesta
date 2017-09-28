@@ -17,10 +17,17 @@ expectations[T_INDENT] = function(prev, token)
 	expect = { T_IDENTIFIER, T_KEYWORD }
 end
 
+expectations[T_DEDENT] = function(prev, token)
+	expect = { T_IDENTIFIER, T_KEYWORD }
+end
+
 expectations[T_SEPARATOR] = function(prev, token)
-	expect = { T_IDENTIFIER, T_LITERAL, T_SEPARATOR }
+	expect = { T_IDENTIFIER, T_LITERAL, T_SEPARATOR, T_KEYWORD }
 	if token.value == ":" then
 		table.insert(expect, T_INDENT)
+	end
+	if token.value == ")" or token.value == "]" then
+		table.insert(expect, T_DEDENT)
 	end
 end
 
@@ -30,6 +37,12 @@ expectations[T_IDENTIFIER] = function(prev, token)
 		return
 	end
 	expect = { T_OPERATOR, T_SEPARATOR }
+	if prev.type == T_LITERAL
+		or prev.type == T_IDENTIFIER
+		or prev.type == T_DEDENT
+		or prev.type == T_SEPARATOR then
+		table.insert(expect, T_KEYWORD)
+	end
 end
 
 expectations[T_KEYWORD] = function(prev, token)
@@ -41,11 +54,11 @@ expectations[T_OPERATOR] = function(prev, token)
 end
 
 expectations[T_LITERAL] = function(prev, token)
-	expect = { T_IDENTIFIER, T_KEYWORD, T_SEPARATOR }
+	expect = { T_IDENTIFIER, T_KEYWORD, T_SEPARATOR, T_OPERATOR, T_DEDENT }
 end
 
 local function parse(tokens)
-	local prev = false
+	local prev = { value = "<beginning of file>", type = T_INVALID }
 	for _, v in ipairs(tokens) do
 		local met = false
 		for _, ttype in ipairs(expect) do
