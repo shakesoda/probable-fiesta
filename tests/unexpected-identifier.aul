@@ -1,0 +1,8 @@
+function main():
+	local yo = 1
+	local b = q
+	local d = b
+	* 2
+	yo()
+	yo()
+	yo // should throw unexpected identifier error

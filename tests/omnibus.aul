@@ -3,14 +3,16 @@ local bar = foo
 
 function mangos(): f32
 	local yo = 1
+	local b = q
+	global party
 
 	if yo == bar:
 		banans()
 
-	yo
+	local d = b
 
 	function bungos():
 		bananas2()
 		local bacon = pie * 5.0 * 2
 
-main(1)
+main(foof, 2)
