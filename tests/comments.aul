@@ -1,8 +1,6 @@
 //function /* inline */ abcdef(): /* inline */ /* yo */
 //	print("dfg") /* remove
-qwerrt
-gfdsh
-	gggg*///baby baby
+local gggg*///baby baby
 	//ffff
 
 function fresh(): to /* death */ y/* oo */o
@@ -10,7 +8,7 @@ function fresh(): to /* death */ y/* oo */o
 	//return 5.0f
 
 	//function main(bar, gjt: f32 = 5):
-	let yo /* test */ = 1
+	local yo /* test */ = 1
 
 	if yo == bar: // what
 		banans()//yo
@@ -19,7 +17,7 @@ function fresh(): to /* death */ y/* oo */o
 	yo
 
 		mangos()
-		let bacon = pie * 5.0 * 2
+		local bacon = pie * 5.0 * 2
 
 	//hey
 	//	hey:

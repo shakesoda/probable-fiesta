@@ -1,0 +1,16 @@
+global foo = 5
+local bar = foo
+
+function mangos(): f32
+	local yo = 1
+
+	if yo == bar:
+		banans()
+
+	yo
+
+	function bungos():
+		bananas2()
+		local bacon = pie * 5.0 * 2
+
+main(1)

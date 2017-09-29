@@ -3,7 +3,7 @@ local utils = require "utils"
 local error_msg = utils.error_msg
 
 local expect = { T_KEYWORD }
-local statements, statement_index
+local current_node
 
 local expectations = {
 	INVALID_TOKEN = function(prev, token)
@@ -16,8 +16,7 @@ local expectations = {
 
 local function next_statement(reason)
 	assert(reason)
-	statement_index = statement_index + 1
-	table.insert(statements, { value = "", indent = 0, cause = reason })
+	table.insert(current_node, { tokens = {}, cause = reason })
 end
 
 expectations[T_INDENT] = function(prev, token)
@@ -68,10 +67,9 @@ expectations[T_LITERAL] = function(prev, token)
 end
 
 local function parse(tokens)
-	statement_index = 0
-	statements = {}
+	current_node = {}
 	local prev = { value = "<beginning of file>", type = T_INVALID }
-	local block = 0
+
 	for _, v in ipairs(tokens) do
 		local met = false
 		for _, ttype in ipairs(expect) do
@@ -95,20 +93,65 @@ local function parse(tokens)
 				break
 			end
 		end
-		if v.type ~= T_INDENT and v.type ~= T_DEDENT then
-			statements[statement_index] = statements[statement_index] or { value = "" }
-			statements[statement_index].value = statements[statement_index].value .. " " .. v.value
-			statements[statement_index].indent = block
+
+		if v.type == T_INDENT then
+			for i = 1, v.value do
+				local parent = current_node
+				current_node = {}
+				current_node.parent = parent
+			end
+		elseif v.type == T_DEDENT then
+			for i = 1, v.value do
+				table.insert(current_node.parent, current_node)
+				current_node = current_node.parent
+			end
 		else
-			block = tonumber(v.posinfo.indent)
+			local top = current_node[#current_node]
+			if not top then
+				top = {}
+				table.insert(current_node, top)
+			end
+			top.tokens = top.tokens or {}
+			table.insert(top.tokens, v)
 		end
-		-- print(token_name(v.type), met)
 		prev = v
 	end
 
-	for k, v in ipairs(statements) do
-		print(k, --[[token_name(v.cause),]] string.rep(" ", v.indent*4) .. v.value)
+	local function dump_ast(t, level)
+		level = level or -1 -- there's no tokens on level 0
+		local pad = string.rep(" ", level * 4)
+		for k, v in pairs(t) do
+			if k == "tokens" then
+				local str = ""
+				local ttype = {
+					[T_OPERATOR] = "",
+					[T_SEPARATOR] = "",
+					[T_KEYWORD] = "%",
+					[T_LITERAL] = "#",
+					[T_IDENTIFIER] = "$"
+				}
+				print(pad .. "; " .. utils.trim(v[1].raw))
+				for i, token in ipairs(v) do
+					local pre = ttype[token.type] or "?"
+					str = str .. pre .. token.value
+					if i < #v then
+						str = str .. " "
+					end
+				end
+				str = str .. ""
+				print(pad .. str)
+			elseif type(v) == "table" and k ~= "parent"
+				and v.cause ~= T_INDENT and v.cause ~= T_DEDENT
+			then
+				dump_ast(v, level + 1)
+				local comma = tonumber(k) and tonumber(k) < #t or false
+			end
+		end
 	end
+
+	print("; = original source")
+	print("; # = literal, $ = identifier, % = keyword")
+	dump_ast(current_node)
 end
 
 return {
