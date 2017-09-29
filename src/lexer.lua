@@ -13,7 +13,7 @@ local posinfo = {
 	indent = 0
 }
 
-local function emit(token, value)
+local function emit(token, value, extra)
 	prev = token
 	local top = tokens[#tokens]
 	if top and top.posinfo.row == posinfo.row and top.posinfo.col == posinfo.col then
@@ -33,7 +33,7 @@ local function emit(token, value)
 			}
 		})
 	end
-	table.insert(tokens, {
+	local t = {
 		type = token,
 		value = value,
 		raw = buf,
@@ -42,14 +42,17 @@ local function emit(token, value)
 			col = posinfo.col,
 			indent = posinfo.indent
 		}
-	})
+	}
+	if extra then
+		for k, v in pairs(extra) do
+			t[k] = v
+		end
+	end
+	table.insert(tokens, t)
 end
 
 local function set_prev(v)
 	tokens[#tokens].value = v
-end
-
-local function update()
 end
 
 local function advance(expect)
@@ -119,11 +122,12 @@ local function check_operator()
 		["]"]  = T_SEPARATOR,
 
 		-- misc
+		[","] = T_SEPARATOR,
 		[":"] = T_SEPARATOR,
 	}
 	local operators_rev = utils.invert(operators)
 	local ident = buf:sub(posinfo.col)
-	ident = ident:match("^([%*=%-%+%(%)%[%]%:]+)")
+	ident = ident:match("^([%*=%-%+%(%)%[%]%:,]+)")
 	local op = longest_match(operators, ident)
 	if op then
 		emit(operators[op], op)
@@ -144,7 +148,7 @@ local function check_keyword(ident)
 end
 
 local function check_identifier()
-	local pat = "^([%a%u_][%a%u%d_]+)"
+	local pat = "^([%a%u_][%a%u%d_]*)"
 	local ident = buf:sub(posinfo.col):match(pat)
 	if ident then
 		if check_keyword(ident) then
@@ -162,7 +166,7 @@ local function check_literal()
 	local float = "^([%-%+]?[%d]*%.?[%d]+f?)"
 	local lit = check:match(float)
 	if lit and #lit > 0 then
-		emit(T_LITERAL, lit)
+		emit(T_LITERAL, lit, { data_type = "f32" })
 		posinfo.col = posinfo.col + #lit
 		return true
 	end
@@ -170,7 +174,7 @@ local function check_literal()
 	local int = "^([%-%+]?[%d]+)"
 	lit = check:match(int)
 	if lit and #lit > 0 then
-		emit(T_LITERAL, lit)
+		emit(T_LITERAL, lit, { data_type = "i32" })
 		posinfo.col = posinfo.col + #lit
 		return true
 	end

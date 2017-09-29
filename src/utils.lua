@@ -137,6 +137,8 @@ local normal = ""
 local red = ""
 local green = ""
 local yellow = ""
+local dim = ""
+local blue = ""
 
 -- this check might not work on windows
 local has_tput = io.popen("tput sgr0 2> /dev/null"):read(0) ~= nil
@@ -145,8 +147,10 @@ if has_tput then
 		return io.popen("tput " .. s):read("*a")
 	end
 	normal = readout("sgr0")
+	dim = readout("dim")
 	bold = readout("bold")
 	red = readout("setaf 1")
+	blue = readout("setaf 4")
 	green = readout("setaf 2")
 	yellow = readout("setaf 3")
 end
@@ -168,6 +172,13 @@ local function error_msg(msg, line, posinfo, warning, len)
 end
 
 return {
+	bold = bold,
+	dim = dim,
+	normal = normal,
+	green = green,
+	red = red,
+	blue = blue,
+	yellow = yellow,
 	clean = clean,
 	split = split,
 	trim = trim,

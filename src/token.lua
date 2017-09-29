@@ -15,7 +15,14 @@ local tokens = {
 	T_SEPARATOR = id(),
 	T_OPERATOR = id(),
 	T_INDENT = id(),
-	T_DEDENT = id()
+	T_DEDENT = id(),
+
+	-- parser tokens
+	PT_FUNCTION = id(),
+	PT_CALL = id(),
+	PT_TYPE = id(),
+	PT_VARIABLE = id(),
+	PT_COND = id()
 }
 
 local names = utils.invert(tokens)
